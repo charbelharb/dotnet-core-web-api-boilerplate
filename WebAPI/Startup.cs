@@ -35,6 +35,18 @@ namespace WebAPI
 
             services.AddIdentity<WebApiUser, IdentityRole>().AddEntityFrameworkStores<WebApiContext>();
 
+            //Not secure at all, change it please.
+            services.AddIdentityCore<WebApiUser>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 1;
+                options.Password.RequireUppercase = false;
+                options.Password.RequiredUniqueChars = 0;
+                options.Password.RequireLowercase = false;
+                options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultEmailProvider;
+            }).AddDefaultTokenProviders();
+
             new IdentityBuilder(typeof(WebApiUser), typeof(IdentityRole), services)
                 .AddSignInManager<SignInManager<WebApiUser>>()
                 .AddEntityFrameworkStores<WebApiContext>();
