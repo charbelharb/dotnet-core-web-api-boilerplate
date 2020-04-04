@@ -4,8 +4,9 @@
 
 namespace WebAPI.Core
 {
-    [Route("api/[controller]")]
-    public class BaseController : Controller
+    [Route("api/[controller]/[action]")]
+    [ApiController]
+    public class BaseController : ControllerBase
     {
 
     }
