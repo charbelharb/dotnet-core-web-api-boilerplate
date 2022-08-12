@@ -2,12 +2,12 @@
 
 namespace WebAPI.Model
 {
-    public class DTOWebApiUser
+    public class DtoWebApiUser
     {
         [JsonProperty("Username")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         [JsonProperty("Password")]
-        public string Password { get; set; }
+        public string? Password { get; set; }
     }
 }

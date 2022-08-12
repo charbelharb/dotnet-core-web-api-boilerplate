@@ -12,15 +12,12 @@ namespace WebAPI.Core
     {
         private string GetCurrentUser()
         {
-            string result = "";
-            ClaimsPrincipal _curUser = HttpContext.User;
-            if (_curUser != null)
+            var result = "";
+            var curUser = HttpContext.User;
+            var curUserId = curUser.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
+            if (curUserId != null && !string.IsNullOrEmpty(curUserId.Value))
             {
-                Claim _curUserId = _curUser.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
-                if (_curUserId != null && !string.IsNullOrEmpty(_curUserId.Value))
-                {
-                    result = _curUserId.Value;
-                }
+                result = curUserId.Value;
             }
             return result;
         }

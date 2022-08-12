@@ -4,7 +4,7 @@ using System;
 
 namespace WebAPI.Core
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
     public class WebApiAuthorize : AuthorizeAttribute
     {
         public WebApiAuthorize()

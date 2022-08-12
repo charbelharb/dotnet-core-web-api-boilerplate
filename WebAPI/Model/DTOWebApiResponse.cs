@@ -2,9 +2,9 @@
 
 namespace WebAPI.Model
 {
-    public class DTOWebApiResponse
+    public class DtoWebApiResponse
     {
         [JsonProperty("Data")]
-        public object Data { get; set; }
+        public object? Data { get; set; }
     }
 }

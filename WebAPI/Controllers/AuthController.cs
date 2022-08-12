@@ -23,8 +23,8 @@ namespace WebAPI.Controllers
     public class AuthController : BaseController
     {
         private readonly IConfiguration _config;
-        private readonly UserManager<WebApiUser> _userManager = null;
-        private readonly SignInManager<WebApiUser> _signInManager = null;
+        private readonly UserManager<WebApiUser> _userManager;
+        private readonly SignInManager<WebApiUser> _signInManager;
 
         public AuthController(IConfiguration configuration,
             SignInManager<WebApiUser> signInManager,
@@ -37,49 +37,41 @@ namespace WebAPI.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> LogIn([FromForm]DTOWebApiUser loginModel)
+        public async Task<IActionResult> LogIn([FromForm]DtoWebApiUser loginModel)
         {
             IActionResult result = Unauthorized();
-            WebApiUser _user = await _userManager.FindByNameAsync(loginModel.Username);
-            if (_user != null)
+            if (await _userManager.FindByNameAsync(loginModel.Username) is not { } user) return result;
+            var signInResult = await _signInManager.CheckPasswordSignInAsync(user, loginModel.Password, false);
+            if (signInResult.Succeeded)
             {
-                Microsoft.AspNetCore.Identity.SignInResult signInResult = await _signInManager.CheckPasswordSignInAsync(_user, loginModel.Password, false);
-                if (signInResult.Succeeded)
-                {
-                    result = Ok(await BuildJwtToken(_user.Id));
-                }
+                result = Ok(await BuildJwtToken(user.Id));
             }
             return result;
         }
 
         [WebApiAuthorize]
-        public async Task<DTOWebApiResponse> TestAuthorize()
+        public async Task<DtoWebApiResponse> TestAuthorize()
         {
-            return new DTOWebApiResponse() { Data = await Task.Run(() => { return "Authorize, Eureka!"; }) };
+            return new DtoWebApiResponse { Data = await Task.Run(() => "Authorize, Eureka!") };
         }
 
         [AllowAnonymous]
-        public async Task<DTOWebApiResponse> TestAnonymous()
+        public async Task<DtoWebApiResponse> TestAnonymous()
         {
-            return new DTOWebApiResponse() { Data = await Task.Run(() => { return "Anonymous, Eureka!"; }) };
+            return new DtoWebApiResponse { Data = await Task.Run(() => "Anonymous, Eureka!") };
         }
 
 #if DEBUG
         [AllowAnonymous]
-        public async Task<DTOWebApiResponse> CreateDefaultUser()
+        public async Task<DtoWebApiResponse> CreateDefaultUser()
         {
-            IdentityResult identityResult = await _userManager.CreateAsync(new WebApiUser() { UserName = "admin", Email = "test@example.com" }, "admin");
-            string result;
-            if (identityResult.Succeeded)
-            {
-                result = "Default User Created, Eureka!";
-            }
-            else
-            {
-                result = $"Error! Code: { identityResult.Errors.FirstOrDefault().Code }, Description: {identityResult.Errors.FirstOrDefault().Description }";
-            }
+            var identityResult = await _userManager.CreateAsync(new WebApiUser() { UserName = "admin", Email = "test@example.com" }, "admin");
+            var result = identityResult.Succeeded ?
+                "Default User Created, Eureka!" :
+                @$"Error! Code: { identityResult.Errors.FirstOrDefault()?.Code }, 
+                   Description: {identityResult.Errors.FirstOrDefault()?.Description }";
 
-            return new DTOWebApiResponse()
+            return new DtoWebApiResponse()
             {
                 Data = result
             };
@@ -92,18 +84,19 @@ namespace WebAPI.Controllers
                 userId = CurrentUser;
             }
 
-            JwtSecurityToken token = await Task.Run(() =>
+            var token = await Task.Run(() =>
             {
-                List<Claim> claims = new List<Claim>() {
-            new Claim(JwtRegisteredClaimNames.Sub, userId)
+                var claims = new List<Claim>
+                {
+            new(JwtRegisteredClaimNames.Sub, userId)
             };
-                SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-                SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+                var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 return new JwtSecurityToken(_config["Jwt:Issuer"],
               _config["Jwt:Issuer"],
               claims,
               expires: DateTime.Now.AddMinutes(60),
-              signingCredentials: creds);
+              signingCredentials: credentials);
             });
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
